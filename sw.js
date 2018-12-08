@@ -1,4 +1,4 @@
-let staticCacheName = "restaurant-reviews-cache";
+let staticCacheName = "restaurant-cache";
 let urlsToCache = [
   "./",
   "./index.html",
@@ -20,15 +20,18 @@ let urlsToCache = [
   "./img/9.jpg",
   "./img/10.jpg"
 ];
-
+console.log("MMMMM");
 /**
  * Installation of service worker
  */
 self.addEventListener("install", function(event) {
   event.waitUntil(
-    caches.open(staticCacheName).then(function(cache) {
-      return cache.addAll(urlsToCache);
-    })
+    caches
+      .open(staticCacheName)
+      .then(cache => {
+        return cache.addAll(urlsToCache);
+      })
+      .catch(err => console.log(err))
   );
 });
 

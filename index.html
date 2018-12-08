@@ -12,6 +12,7 @@
       integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ=="
       crossorigin=""
     />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Restaurant Reviews</title>
   </head>
 
@@ -23,7 +24,7 @@
     </header>
 
     <main id="maincontent">
-      <section id="map-container" aria-label="location">
+      <section id="map-container" aria-label="location" role="application">
         <div id="map"></div>
       </section>
       <section>
@@ -63,6 +64,11 @@
       type="application/javascript"
       charset="utf-8"
       src="js/main.js"
+    ></script>
+    <script
+      type="application/javascript"
+      charset="utf-8"
+      src="js/sw_registration.js"
     ></script>
     <!--
       <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initMap"></script>
