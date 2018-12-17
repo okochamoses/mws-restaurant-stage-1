@@ -1,5 +1,6 @@
 let staticCacheName = "restaurant-cache";
 let urlsToCache = [
+  "./manifest.json",
   "./",
   "./index.html",
   "./restaurant.html",
