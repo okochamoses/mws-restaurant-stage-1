@@ -1,3 +1,49 @@
+const idbApp = (function() {
+  'use strict';
+  if(!navigator.serviceWorker) {
+    console.log('Exited idbApp due to no service worker installed.');
+    return Promise.resolve();
+  }
+  const dbPromise = idb.open('restaurantreviews', 1, function(upgradeDb) {
+    switch (upgradeDb.oldVersion) {
+      case 0:
+        upgradeDb.createObjectStore('restaurants', {
+          keyPath: 'id'
+        });
+    }
+  });
+  function addRestaurantById(restaurant) {
+    dbPromise.then(function(db) {
+      const tx = db.transaction('restaurants', 'readwrite');
+      const store = tx.objectStore('restaurants');
+      return store.put(restaurant);
+    }).catch(function(e) {
+      tx.abort();
+      console.log("Unable to add restaurant to IndexedDB", e);
+    });
+  }
+
+  function fetchRestaurantById(id) {
+    return dbPromise.then(function(db) {
+      const tx = db.transaction('restaurants');
+      const store = tx.objectStore('restaurants');
+      return store.get(parseInt(id));
+    }).then(function(restaurantObject) {
+      return restaurantObject;
+    }).catch(function(e) {
+      console.log("idbApp.fetchRestaurantById errored out:", e);
+    });
+  }
+
+  return {
+    dbPromise: (dbPromise),
+    addRestaurantById: (addRestaurantById),
+    fetchRestaurantById: (fetchRestaurantById),
+  };
+})();
+
+
+
 const idbKeyVal = {
   get(key) {
     return dbPromise.then(db => {
@@ -37,11 +83,9 @@ class DBHelper {
     fetch(DBHelper.DATABASE_URL)
     .then(response => response.json())
     .then(function(jsonResponse) {
-      console.log("GC: fetch is working!");
       callback(null, jsonResponse);
     })
     .catch(function(error) {
-      console.log("GC: Uh oh, fetch is bad");
       const errorMessage = (`Request failed. Returned status of ${error}`);
       callback(errorMessage, null);
     });
@@ -52,16 +96,26 @@ class DBHelper {
    */
   static fetchRestaurantById(id, callback) {
     // fetch all restaurants with proper error handling.
-    DBHelper.fetchRestaurants((error, restaurants) => {
-      if (error) {
-        callback(error, null);
-      } else {
-        const restaurant = restaurants.find(r => r.id == id);
-        if (restaurant) { // Got the restaurant
-          callback(null, restaurant);
-        } else { // Restaurant does not exist in the database
-          callback('Restaurant does not exist', null);
-        }
+    const idbRestaurant = idbApp.fetchRestaurantById(id);
+    idbRestaurant.then(function(idbRestaurantObject) {
+      if (idbRestaurantObject) {
+        callback(null, idbRestaurantObject);
+        return;
+      }
+      else {
+        DBHelper.fetchRestaurants((error, restaurants) => {
+          if (error) {
+            callback(error, null);
+          } else {
+            const restaurant = restaurants.find(r => r.id == id);
+            if (restaurant) {
+              idbApp.addRestaurantById(restaurant); // add restaurant to DB
+              callback(null, restaurant);
+            } else {
+              callback('Restaurant not found', null);
+            }
+          }
+        });
       }
     });
   }
