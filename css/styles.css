@@ -250,6 +250,10 @@ table {
   justify-content: center;
 }
 
+.footer-link {
+  color: #fff;
+}
+
 /* ====================== Header ====================== */
 header {
   position: fixed;
