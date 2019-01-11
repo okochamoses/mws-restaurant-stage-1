@@ -752,6 +752,14 @@ form h2 {
   transition: all 0.2s ease-out;
 }
 
+.favourite {
+  width: 100%
+}
+
+.active {
+  background-color: red;
+}
+
 @media screen and (min-width: 578px) {
   .filter-options h2 {
     margin: 0 20px;

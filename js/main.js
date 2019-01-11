@@ -186,6 +186,39 @@ createRestaurantHTML = restaurant => {
   address.innerHTML = restaurant.address;
   li.append(address);
 
+  const like = document.createElement("button");
+  like.className = "favourite";
+  like.setAttribute('aria-label', "favourite")
+  
+  if(restaurant.is_favorite == "true") {
+
+    like.classList.add('active');
+    like.setAttribute('aria-pressed', 'true');
+    like.innerHTML = `Unlike`;
+    like.title = `Unlike`;
+  } else {
+    like.setAttribute('aria-pressed', 'false');
+    like.innerHTML = `Like`;
+    like.title = `Like`;
+  }
+
+  like.addEventListener('click', (evt) => {
+    evt.preventDefault();
+    if (like.classList.contains('active')) {
+      like.setAttribute('aria-pressed', 'false');
+      like.innerHTML = `Like`;
+      like.title = `Like`;
+      DBHelper.unlike(restaurant.id);
+    } else {
+      like.setAttribute('aria-pressed', 'true');
+      like.innerHTML = `Unlike`;
+      like.title = `Unlike`;
+      DBHelper.like(restaurant.id);
+    }
+    like.classList.toggle('active');
+  });
+  li.append(like)
+
   const more = document.createElement("a");
   more.innerHTML = "View Details";
   more.href = DBHelper.urlForRestaurant(restaurant);
@@ -193,6 +226,23 @@ createRestaurantHTML = restaurant => {
 
   return li;
 };
+
+/**
+ * Check return toggle for favourite restaurant
+ */
+const favRestaurant = (el, restaurant) => {
+  console.log(restaurant.is_favorite)
+  if(restaurant.is_favorite == true) {
+    el.classList.add('active');
+    el.setAttribute('aria-pressed', 'true');
+    el.innerHTML = `Remove ${restaurant.name} as a favourite`;
+    el.title = `Remove ${restaurant.name} as a favourite`;
+  } else {
+    el.setAttribute('aria-pressed', 'false');
+    el.innerHTML = `Add ${restaurant.name} as a favourite`;
+    el.title = `Add ${restaurant.name} as a favourite`;
+  }
+}
 
 /**
  * Add markers for current restaurants to the map.

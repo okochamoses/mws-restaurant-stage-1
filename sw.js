@@ -72,24 +72,19 @@ self.addEventListener("activate", function(event) {
 self.addEventListener("fetch", function(event) {
   let requestUrl = new URL(event.request.url);
     if (requestUrl.origin === location.origin) {
-      // if (requestUrl.pathname.startsWith('/restaurant.html')) {
         event.respondWith(serveRestaurantHTML(event.request));
         return;
       }
+      if (event.request.method !== 'GET') return;
       event.respondWith(
         caches.match(event.request).then(function(response) {
-          console.log(event.request.url);
           return response || fetch(event.request);
         })
       ); 
-    // }
 });
 
   // serves restaurants.html page
   function serveRestaurantHTML(request) {
-    console.log(request);
-    // Use this url to store & match retaurants.hmtl in the cache.
-    // This means you only store one copy of restaurants.html
     const storageUrl = request.url.split('?')[0];
 
     return caches.open(staticCacheName).then(function(cache) {

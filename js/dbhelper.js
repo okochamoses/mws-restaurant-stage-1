@@ -247,5 +247,23 @@ class DBHelper {
     return marker;
   } */
 
+  /**
+   * Like a restaurant
+   */
+  static like(id) {
+    fetch(`${DBHelper.DATABASE_URL}/${id}/?is_favorite=true`, {
+      method: 'PUT'
+    });
+  }
+
+  /**
+   * Unlike a restaurant
+   */
+  static unlike(id) {
+    fetch(`${DBHelper.DATABASE_URL}/${id}/?is_favorite=false`, {
+      method: "PUT"
+    });
+  }
+
 }
 
