@@ -76,6 +76,11 @@ class DBHelper {
     return `http://localhost:${port}/restaurants`;
   }
 
+  static get BASE_URL() {
+    const port = 1337;
+    return `http://localhost:${port}`;
+  }
+
   /**
    * Fetch all restaurants.
    */
@@ -265,5 +270,31 @@ class DBHelper {
     });
   }
 
+  /**
+   * Fetch reviews by ID
+   */
+  static fetchRestaurantReviewsById(id, callback) {
+    fetch(DBHelper.BASE_URL + `/reviews/?restaurant_id=${id}`)
+      .then(response => response.json())
+      .then(data => callback(null, data))
+      .catch(err => callback(err, null));
+  }
+
+  static createRestaurantReview(id, name, rating, comments, callback) {
+    const data = {
+      'restaurant_id': id,
+      'name': name,
+      'rating': rating,
+      'comments': comments
+    };
+    fetch(`${DBHelper.BASE_URL}/reviews`, {
+      headers: { 'Content-Type': 'application/form-data' },
+      method: 'POST',
+      body: JSON.stringify(data)
+    })
+      .then(response => response.json())
+      .then(data => callback(null, data))
+      .catch(err => callback(err, null));
+  }
 }
 
