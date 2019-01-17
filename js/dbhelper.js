@@ -7,9 +7,9 @@ const idbApp = (function() {
   const dbPromise = idb.open('restaurantreviews', 1, function(upgradeDb) {
     switch (upgradeDb.oldVersion) {
       case 0:
-        upgradeDb.createObjectStore('restaurants', {
-          keyPath: 'id'
-        });
+        upgradeDb.createObjectStore('restaurants')
+        upgradeDb.createObjectStore('reviews', {keyPath: 'id'})
+
     }
   });
   function addRestaurantById(restaurant) {
@@ -35,10 +35,43 @@ const idbApp = (function() {
     });
   }
 
+  function fetchAllReviewsByRestaurantId(id) {
+    return dbPromise.then((db) => {
+      const tx = db.transaction('reviews');
+      const store = tx.objectStore('reviews');
+      return store.getAll();
+    }).then((reviews) => {
+      let r;
+      reviews.forEach(review => {
+        // console.log(review)
+        if(review.id == id) {
+          r = review.reviews
+        }
+      }
+      )
+      return r
+    }
+    
+    ).catch(err => console.log(err))
+  }
+
+  function addReviewByRestaurant(id, reviews) {
+    dbPromise.then(function(db) {
+      const tx = db.transaction('reviews', 'readwrite');
+      const store = tx.objectStore('reviews');
+      store.put({id, reviews});
+    }).catch(function(e) {
+      // tx.abort();
+      console.log("Unable to add restaurant to IndexedDB", e);
+    });
+  }
+
   return {
     dbPromise: (dbPromise),
     addRestaurantById: (addRestaurantById),
     fetchRestaurantById: (fetchRestaurantById),
+    fetchAllReviewsByRestaurantId: (fetchAllReviewsByRestaurantId),
+    addReviewByRestaurant: (addReviewByRestaurant)
   };
 })();
 
@@ -274,10 +307,30 @@ class DBHelper {
    * Fetch reviews by ID
    */
   static fetchRestaurantReviewsById(id, callback) {
-    fetch(DBHelper.BASE_URL + `/reviews/?restaurant_id=${id}`)
-      .then(response => response.json())
-      .then(data => callback(null, data))
-      .catch(err => callback(err, null));
+    if(!navigator.onLine) {
+      idbApp.fetchAllReviewsByRestaurantId(id).then((reviews) => {
+        return callback(null, reviews)
+      })
+    } else {
+      // fetch(DBHelper.BASE_URL + `/reviews/?restaurant_id=${id}`)
+      //   .then(response => {
+      //     if(response) {
+      //       // response.json().then((body) => {console.log(body)}).catch(err => console.log(err))
+      //       // // console.log(response.json())
+      //       // // idbApp.addReviewByRestaurant(response);
+      //       return response.json()
+      //         .then(body => {
+      //           console.log(body);
+      //           idbApp.addReviewByRestaurant(id, body);
+      //           console.log(body)
+      //           return body;
+      //         })
+      //     }
+          
+      //   })
+      //   .then(data => callback(null, data))
+      //   .catch(err => callback(err, null));
+    }
   }
 
   static createRestaurantReview(id, name, rating, comments, callback) {
@@ -296,5 +349,10 @@ class DBHelper {
       .then(data => callback(null, data))
       .catch(err => callback(err, null));
   }
+
+  static fetchAllReviewsByRestaurantId(restaurantId) {
+    idbApp.fetchAllReviewsByRestaurantId(restaurantId);
+  }
+
 }
 

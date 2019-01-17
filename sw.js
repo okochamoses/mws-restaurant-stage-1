@@ -71,7 +71,13 @@ self.addEventListener("activate", function(event) {
  */
 self.addEventListener("fetch", function(event) {
   let requestUrl = new URL(event.request.url);
+  const storageUrl = requestUrl.href.split('?')[0];
+
+  if(storageUrl == "http://localhost:1337/reviews/") {
+    return;
+  }
     if (requestUrl.origin === location.origin) {
+      console.log(location.origin, requestUrl.origin)
         event.respondWith(serveRestaurantHTML(event.request));
         return;
       }
@@ -83,18 +89,23 @@ self.addEventListener("fetch", function(event) {
       ); 
 });
 
-  // serves restaurants.html page
-  function serveRestaurantHTML(request) {
-    const storageUrl = request.url.split('?')[0];
+// serves restaurants.html page
+function serveRestaurantHTML(request) {
+  const storageUrl = request.url.split('?')[0];
 
-    return caches.open(staticCacheName).then(function(cache) {
-      return cache.match(storageUrl).then(function(response) {
-        if (response) return response;
+  return caches.open(staticCacheName).then(function(cache) {
+    return cache.match(storageUrl).then(function(response) {
+      if (response) return response;
 
-        return fetch(request).then(function(networkResponse) {
-          cache.put(storageUrl, networkResponse.clone());
-          return networkResponse;
-        });
+      return fetch(request).then(function(networkResponse) {
+        cache.put(storageUrl, networkResponse.clone());
+        return networkResponse;
       });
     });
-  }
+  });
+}
+
+function serveReviews(request) {
+  const storageUrl = request.url.split('?')[1];
+  
+}

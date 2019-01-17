@@ -142,6 +142,7 @@ const fillReviewsHTML = (error, reviews) => {
 
   if (error) {
     console.log('Error retrieving reviews', error);
+    return;
   }
   const container = document.getElementById("reviews-container");
   const title = document.createElement("h3");
@@ -156,6 +157,7 @@ const fillReviewsHTML = (error, reviews) => {
   }
   const ul = document.getElementById("reviews-list");
   reviews.forEach(review => {
+    // console.log(review)
     ul.appendChild(createReviewHTML(review));
   });
   container.appendChild(ul);
@@ -186,6 +188,7 @@ createReviewHTML = review => {
   comments.innerHTML = review.comments;
   li.appendChild(comments);
 
+  // console.log(review)
   return li;
 };
 
@@ -277,3 +280,4 @@ createReviewForm = () => {
   formContainer.appendChild(button);
 }
 
+test = () => {console.log(1111111111)}
