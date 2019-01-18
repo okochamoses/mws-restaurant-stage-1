@@ -266,18 +266,23 @@ createReviewForm = () => {
     const name = document.querySelector('#reviewName').value;
     const rating = document.querySelector('#ratingValue').value;
     const comments = document.querySelector('#reviewComment').value;
+
+    const id = window.location.href.split("=")[1];
+    console.log(id)
   
-    DBHelper.createRestaurantReview(self.restaurant.id, name, rating, comments,
+    DBHelper.createRestaurantReview(id, name, rating, comments,
       (error, review) => {
       if (error) {
+        console.log(id, name, rating, comments)
+        DBHelper.createOfflineReview(id, name, rating, comments)
         console.log('Error saving review');
       } else {
         console.log(review);
-        window.location.href = `/restaurant.html?id=${self.restaurant.id}`;
+        window.location.href = `/restaurant.html?id=${id}`;
       }
     });
   });
   formContainer.appendChild(button);
 }
 
-test = () => {console.log(1111111111)}
+DBHelper.test()

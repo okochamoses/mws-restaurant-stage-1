@@ -77,7 +77,6 @@ self.addEventListener("fetch", function(event) {
     return;
   }
     if (requestUrl.origin === location.origin) {
-      console.log(location.origin, requestUrl.origin)
         event.respondWith(serveRestaurantHTML(event.request));
         return;
       }

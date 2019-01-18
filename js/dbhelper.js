@@ -4,12 +4,13 @@ const idbApp = (function() {
     console.log('Exited idbApp due to no service worker installed.');
     return Promise.resolve();
   }
-  const dbPromise = idb.open('restaurantreviews', 1, function(upgradeDb) {
+  const dbPromise = idb.open('restaurantreviews', 2, function(upgradeDb) {
     switch (upgradeDb.oldVersion) {
       case 0:
         upgradeDb.createObjectStore('restaurants')
         upgradeDb.createObjectStore('reviews', {keyPath: 'id'})
-
+        upgradeDb.createObjectStore('offline',
+        { keyPath: 'id' });
     }
   });
   function addRestaurantById(restaurant) {
@@ -61,17 +62,58 @@ const idbApp = (function() {
       const store = tx.objectStore('reviews');
       store.put({id, reviews});
     }).catch(function(e) {
-      // tx.abort();
-      console.log("Unable to add restaurant to IndexedDB", e);
+      tx.abort();
+      console.log("Unable to add review to IndexedDB", e);
     });
   }
+
+// add review offline
+  function addReviewOffline(id, reviews) {
+    dbPromise.then(function(db) {
+      const tx = db.transaction('offline', 'readwrite');
+      const store = tx.objectStore('offline');
+      store.put({id, reviews});
+    }).catch(function(e) {
+      tx.abort();
+      console.log("Unable to add review to offline db", e);
+    });
+  }
+
+// get offlineReviews
+  function fetchAllOfflineReviews() {
+    return dbPromise.then(function(db) {
+      const tx = db.transaction('offline');
+      const store = tx.objectStore('offline');
+      return store.getAll();
+    }).then(function(reviews) {
+      return reviews;
+    }).catch(function(e) {
+      console.log("idbApp.fetchAllOfflineReviews errored out:", e);
+    });
+  }
+
+// add review to reviews db (online)
+
+// delete from offline
+function deleteOfflineReview(id) {
+  return dbPromise.then(function(db) {
+    const tx = db.transaction('offline', 'readwrite');
+    tx.objectStore('offline').get(id).then(review => {
+      return tx.objectStore("offline").delete(id);
+    });
+    tx.complete.then(() => console.log('done'));
+  })
+}
 
   return {
     dbPromise: (dbPromise),
     addRestaurantById: (addRestaurantById),
     fetchRestaurantById: (fetchRestaurantById),
     fetchAllReviewsByRestaurantId: (fetchAllReviewsByRestaurantId),
-    addReviewByRestaurant: (addReviewByRestaurant)
+    addReviewByRestaurant: (addReviewByRestaurant),
+    addReviewOffline: (addReviewOffline),
+    fetchAllOfflineReviews: (fetchAllOfflineReviews),
+    deleteOfflineReview: (deleteOfflineReview)
   };
 })();
 
@@ -312,24 +354,22 @@ class DBHelper {
         return callback(null, reviews)
       })
     } else {
-      // fetch(DBHelper.BASE_URL + `/reviews/?restaurant_id=${id}`)
-      //   .then(response => {
-      //     if(response) {
-      //       // response.json().then((body) => {console.log(body)}).catch(err => console.log(err))
-      //       // // console.log(response.json())
-      //       // // idbApp.addReviewByRestaurant(response);
-      //       return response.json()
-      //         .then(body => {
-      //           console.log(body);
-      //           idbApp.addReviewByRestaurant(id, body);
-      //           console.log(body)
-      //           return body;
-      //         })
-      //     }
+      fetch(DBHelper.BASE_URL + `/reviews/?restaurant_id=${id}`)
+        .then(response => {
+          if(response) {
+            // response.json().then((body) => {console.log(body)}).catch(err => console.log(err))
+            // // console.log(response.json())
+            // // idbApp.addReviewByRestaurant(response);
+            return response.json()
+              .then(body => {
+                idbApp.addReviewByRestaurant(id, body);
+                return body;
+              })
+          }
           
-      //   })
-      //   .then(data => callback(null, data))
-      //   .catch(err => callback(err, null));
+        })
+        .then(data => callback(null, data))
+        .catch(err => callback(err, null));
     }
   }
 
@@ -340,6 +380,7 @@ class DBHelper {
       'rating': rating,
       'comments': comments
     };
+    console.log(data)
     fetch(`${DBHelper.BASE_URL}/reviews`, {
       headers: { 'Content-Type': 'application/form-data' },
       method: 'POST',
@@ -350,9 +391,57 @@ class DBHelper {
       .catch(err => callback(err, null));
   }
 
+  static createOfflineReview(id, name, rating, comments, callback) {
+    const now = Date.now();
+    const data = {
+      'restaurant_id': id,
+      'name': name,
+      'rating': rating,
+      'comments': comments,
+      'timeId': now
+    };
+    console.log(data)
+    idbApp.addReviewOffline(now, data);
+  }
+
   static fetchAllReviewsByRestaurantId(restaurantId) {
     idbApp.fetchAllReviewsByRestaurantId(restaurantId);
   }
 
+  static fetchAllOfflineReviews() {
+    return idbApp.fetchAllOfflineReviews();
+  }
+
+  static deleteOfflineReview(id) {
+    return idbApp.deleteOfflineReview(id);
+  }
+
+  static test() {
+    console.log("TEST")
+    // idbApp.addReviewOffline({name: "moses"});
+    const x = idbApp.fetchAllOfflineReviews();
+    console.log(x)
+  }
+
 }
 
+window.addEventListener("load", event => {
+  console.log("ONLINE: " + navigator.onLine)
+  if(navigator.onLine) {
+    DBHelper.fetchAllOfflineReviews().then((reviews) => {
+      reviews.forEach(review => {
+        rev = review.reviews;
+        console.log(review)
+        DBHelper.createRestaurantReview(rev.restaurant_id, rev.name, rev.rating, rev.comments, 
+          (err, response) => {
+            if(err) {
+              console.log(err)
+            } else {
+              DBHelper.deleteOfflineReview(review.id);
+            }
+          })
+      })
+      }
+    )
+  }
+})
